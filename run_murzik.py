@@ -1,6 +1,12 @@
-import updater
-import threading
-import os, sys
+import os, sys, socket
+
+# --- защита от дублей ---
+try:
+    _single = socket.socket()
+    _single.bind(('127.0.0.1', 47895))
+except:
+    print("Мурзик уже запущен!")
+    sys.exit(0)
 
 def resource_path(p):
     try:
@@ -9,8 +15,9 @@ def resource_path(p):
         base = os.path.abspath(".")
     return os.path.join(base, p)
 
-# проверяем обнову в фоне, чтобы не тормозить запуск
-threading.Thread(target=lambda: (updater.check_update() and __import__('os').execl(__import__('sys').executable, __import__('sys').executable, "run_murzik.py")), daemon=True).start()
+import updater
+import threading
+threading.Thread(target=lambda: (updater.check_update() and __import__('os').execl(__import__('sys').executable, __import__('sys').executable, sys.argv[0])), daemon=True).start()
 
 import tkinter as tk, math, random, time
 from PIL import Image, ImageTk
@@ -47,14 +54,11 @@ def draw():
     if pid: canvas.delete(pid)
     if txt_id: canvas.delete(txt_id)
     canvas.delete('trail'); canvas.delete('shadow')
-    # шлейф - вернул
     for i,(tx,ty,ta) in enumerate(pet['trail']):
         s=70-i*8
         if s<10: continue
         canvas.create_oval(tx-s//4, ty-s//4, tx+s//4, ty+s//4, fill='#2a4a5a', outline='', tags='trail')
-    # тень - вернул
     canvas.create_oval(pet['x']-30, pet['y']+32, pet['x']+30, pet['y']+38, fill='#111111', outline='', tags='shadow')
-
     t=time.time(); state=pet['state']; bob=0; ang=0; im=base
     if state=='dash' or state=='chase':
         spd=(95,50) if state=='chase' else (90,55)
@@ -107,8 +111,24 @@ def upd():
                 pet['x']+=(dx/d)*sp; pet['y']+=(dy/d)*sp; pet['dir']=1 if dx>0 else -1; pet['frame']+=0.5
     draw(); root.after(20,upd)
 
+# --- управление ---
+def close_all(event=None):
+    try: _single.close()
+    except: pass
+    root.destroy()
+    sys.exit(0)
+
+def show_menu(event):
+    m = tk.Menu(root, tearoff=0)
+    m.add_command(label="Закрыть Мурзика", command=close_all)
+    m.add_command(label="Убить всех котов", command=lambda: (os.system("taskkill /IM Murzik.exe /F"), os.system("taskkill /IM python.exe /F")))
+    m.post(event.x_root, event.y_root)
+
 canvas.bind('<ButtonPress-1>', lambda e: pet.update({'drag':True}) if abs(e.x-pet['x'])<40 and abs(e.y-pet['y'])<40 else None)
 canvas.bind('<B1-Motion>', lambda e: pet.update({'x':e.x,'y':e.y,'tx':e.x,'ty':e.y}) if pet.get('drag') else None)
 canvas.bind('<ButtonRelease-1>', lambda e: pet.update({'drag':False,'state':'idle','idle_until':time.time()+1}) if pet.get('drag') else None)
+canvas.bind('<Button-3>', show_menu)
 root.bind('<Motion>', lambda e: mouse.update({'x':e.x,'y':e.y,'last':time.time()}))
+root.bind('<Escape>', close_all)
+
 upd(); root.mainloop()

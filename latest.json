@@ -1,5 +1,5 @@
 ﻿{
-  "version": "1.0.1",
+  "version": "1.0.2",
   "url": "https://raw.githubusercontent.com/MrRjczr/Murzik_Desktop/main/run_murzik.py",
-  "changelog": "fix exe cat.png path"
+  "changelog": "single instance + close menu"
 }
