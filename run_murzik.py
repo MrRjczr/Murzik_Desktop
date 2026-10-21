@@ -1,6 +1,15 @@
 import updater
-# проверяем обнову в фоне, чтобы не тормозить запуск
 import threading
+import os, sys
+
+def resource_path(p):
+    try:
+        base = sys._MEIPASS
+    except:
+        base = os.path.abspath(".")
+    return os.path.join(base, p)
+
+# проверяем обнову в фоне, чтобы не тормозить запуск
 threading.Thread(target=lambda: (updater.check_update() and __import__('os').execl(__import__('sys').executable, __import__('sys').executable, "run_murzik.py")), daemon=True).start()
 
 import tkinter as tk, math, random, time
@@ -17,7 +26,7 @@ root.config(bg=BG)
 canvas = tk.Canvas(root, width=W, height=H, bg=BG, highlightthickness=0)
 canvas.pack()
 
-orig = Image.open('cat.png').convert('RGBA')
+orig = Image.open(resource_path('cat.png')).convert('RGBA')
 px = orig.load()
 for y in range(orig.height):
     for x in range(orig.width):
